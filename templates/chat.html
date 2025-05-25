@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Analysis Chatbot</title>
+    <!-- Include Flatpickr for date picking -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 20px auto;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            max-width: 70%;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+            border-radius: 18px 0px 18px 18px;
+            padding: 10px 15px;
+        }
+
+        .assistant-message {
+            align-self: flex-start;
+            background-color: white;
+            border-radius: 0px 18px 18px 18px;
+            padding: 10px 15px;
+        }
+
+        .system-message {
+            align-self: center;
+            background-color: #e1e1e1;
+            border-radius: 18px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            color: #555;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .chat-form {
+            padding: 15px;
+            background-color: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .date-picker-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .date-picker {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            margin-right: 10px;
+        }
+
+        .clear-date {
+            color: #666;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .input-container {
+            display: flex;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 30px;
+            outline: none;
+        }
+
+        .send-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logs-toggle {
+            background-color: transparent;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            margin-top: 5px;
+            font-size: 0.8rem;
+            text-decoration: underline;
+            align-self: flex-start;
+        }
+
+        .logs-container {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 0.7rem;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .thinking {
+            display: flex;
+            padding: 10px;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            margin: 0 2px;
+            background-color: #666;
+            border-radius: 50%;
+            animation: typing 1s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        .clear-chat {
+            cursor: pointer;
+            color: white;
+            opacity: 0.7;
+        }
+
+        .clear-chat:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Voice Data Analyst</h2>
+            <div class="clear-chat" onclick="clearChat()"><i class="fas fa-trash-alt"></i></div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be inserted here -->
+            {% if not history %}
+            <div class="message assistant-message">
+                <div class="message-content">
+                    Hello! I can help you analyze voice call data. Ask me anything about calls, sales, or customer
+                    interactions.
+                </div>
+                <div class="message-time">{{ now }}</div>
+            </div>
+            <div class="message assistant-message">
+                <div class="message-content">
+                    Try asking questions like:<br>
+                    - "What are the top 5 products sold successfully?"<br>
+                    - "What's the average call duration for successful sales?"<br>
+                    - "How many calls resulted in sales of DirecTV Satellite?"<br>
+                    You can also set a date range using the picker below.
+                </div>
+                <div class="message-time">{{ now }}</div>
+            </div>
+            {% else %}
+            {% for message in history %}
+            <div class="message {{ message.type }}-message">
+                <div class="message-content">{{ message.message | safe }}</div>
+                <div class="message-time">{{ message.timestamp }}</div>
+                {% if message.type == 'assistant' and message.logs %}
+                <button class="logs-toggle" onclick="toggleLogs(this)">Show execution logs</button>
+                <div class="logs-container">{{ message.logs | safe }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="chat-form">
+            <div class="date-picker-container">
+                <input type="text" id="dateRange" class="date-picker" placeholder="Select date range (optional)"
+                    readonly>
+                <span class="clear-date" onclick="clearDateRange()"><i class="fas fa-times"></i></span>
+            </div>
+            <div class="input-container">
+                <input type="text" id="questionInput" class="chat-input" placeholder="Ask a question..."
+                    autocomplete="off">
+                <button class="send-button" onclick="sendQuestion()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize date range picker
+        let dateRangePicker;
+        let selectedDateRange = {
+            start: null,
+            end: null
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            dateRangePicker = flatpickr("#dateRange", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                onChange: function (selectedDates) {
+                    if (selectedDates.length === 2) {
+                        selectedDateRange.start = selectedDates[0].toISOString().split('T')[0];
+                        selectedDateRange.end = selectedDates[1].toISOString().split('T')[0];
+                    }
+                }
+            });
+
+            // Scroll to bottom of chat messages
+            scrollToBottom();
+
+            // Add enter key support for sending message
+            document.getElementById("questionInput").addEventListener("keypress", function (event) {
+                if (event.key === "Enter") {
+                    sendQuestion();
+                }
+            });
+        });
+
+        function clearDateRange() {
+            dateRangePicker.clear();
+            selectedDateRange.start = null;
+            selectedDateRange.end = null;
+        }
+
+        function scrollToBottom() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function toggleLogs(button) {
+            const logsContainer = button.nextElementSibling;
+            if (logsContainer.style.display === 'block') {
+                logsContainer.style.display = 'none';
+                button.textContent = 'Show execution logs';
+            } else {
+                logsContainer.style.display = 'block';
+                button.textContent = 'Hide execution logs';
+            }
+        }
+
+        function addMessage(type, content, timestamp, logs = null) {
+            const chatMessages = document.getElementById('chatMessages');
+            const now = timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            let messageHtml = `
+                <div class="message ${type}-message">
+                    <div class="message-content">${content}</div>
+                    <div class="message-time">${now}</div>
+            `;
+
+            if (logs && type === 'assistant') {
+                messageHtml += `
+                    <button class="logs-toggle" onclick="toggleLogs(this)">Show execution logs</button>
+                    <div class="logs-container">${logs}</div>
+                `;
+            }
+
+            messageHtml += `</div>`;
+
+            chatMessages.innerHTML += messageHtml;
+            scrollToBottom();
+        }
+
+        function addThinkingIndicator() {
+            const chatMessages = document.getElementById('chatMessages');
+            const thinkingHtml = `
+                <div class="message thinking" id="thinkingIndicator">
+                    <div class="typing-indicator">
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                </div>
+            `;
+            chatMessages.innerHTML += thinkingHtml;
+            scrollToBottom();
+        }
+
+        function removeThinkingIndicator() {
+            const thinkingIndicator = document.getElementById('thinkingIndicator');
+            if (thinkingIndicator) {
+                thinkingIndicator.remove();
+            }
+        }
+
+        function sendQuestion() {
+            const questionInput = document.getElementById('questionInput');
+            const question = questionInput.value.trim();
+
+            if (!question) return;
+
+            // Add user message
+            addMessage('user', question);
+
+            // Clear input
+            questionInput.value = '';
+
+            // Show date range message if selected
+            if (selectedDateRange.start && selectedDateRange.end) {
+                const dateRangeText = `Searching within date range: between ${selectedDateRange.start} and ${selectedDateRange.end}`;
+                addMessage('system', dateRangeText);
+            }
+
+            // Show thinking indicator
+            addThinkingIndicator();
+
+            // Send request to API
+            fetch('/api/query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: question,
+                    date_range: selectedDateRange
+                }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Remove thinking indicator
+                    removeThinkingIndicator();
+
+                    // Add assistant message
+                    addMessage('assistant', data.result, null, data.logs);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    removeThinkingIndicator();
+                    addMessage('system', 'Error processing your request. Please try again.');
+                });
+        }
+
+        function clearChat() {
+            if (confirm('Are you sure you want to clear the chat history?')) {
+                fetch('/api/clear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            document.getElementById('chatMessages').innerHTML = '';
+                            // Add welcome message
+                            addMessage('assistant', 'Hello! I can help you analyze voice call data. Ask me anything about calls, sales, or customer interactions.');
+                            addMessage('assistant', 'Try asking questions like:<br>- "What are the top 5 products sold successfully?"<br>- "What\'s the average call duration for successful sales?"<br>- "How many calls resulted in sales of DirecTV Satellite?"<br>You can also set a date range using the picker below.');
+                        }
+                    });
+            }
+        }
+    </script>
+</body>
+
+</html>
